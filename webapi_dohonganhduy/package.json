@@ -1,0 +1,49 @@
+{
+  "name": "webapi-dohonganhduy",
+  "version": "1.0.0",
+  "description": "ConAn Web API — Đỗ Hồng Anh Duy (đồ án btkt_dohonganhduy)",
+  "type": "module",
+  "main": "src/server.js",
+  "private": true,
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env.development src/server.js",
+    "dev:memory": "node --env-file-if-exists=.env.development scripts/dev-memory.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "lint": "eslint .",
+    "seed": "node --env-file-if-exists=.env scripts/seed.js",
+    "seed:demo": "node --env-file-if-exists=.env scripts/seed-demo.js",
+    "simulate": "node --env-file-if-exists=.env scripts/simulate-location.js",
+    "check:setup": "node --env-file-if-exists=.env scripts/check-setup.js"
+  },
+  "author": "Đỗ Hồng Anh Duy",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dayjs": "^1.11.23",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "firebase-admin": "^14.5.0",
+    "helmet": "^8.3.0",
+    "js-yaml": "^5.5.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.2",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^10.1.7",
+    "socket.io": "^4.8.4",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "jest": "^30.5.2",
+    "mongodb-memory-server": "^11.3.0",
+    "supertest": "^7.3.1"
+  }
+}

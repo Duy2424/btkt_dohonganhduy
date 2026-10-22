@@ -1,0 +1,299 @@
+# Tài liệu API (Swagger UI tại /docs) — ConAn Web API của Đỗ Hồng Anh Duy.
+openapi: 3.0.3
+info:
+  title: ConAn Web API — Đỗ Hồng Anh Duy
+  version: 1.0.0
+  description: |
+    Web API dùng chung cho cả nhóm — project **btkt_dohonganhduy**, database **ConAnDB_DoHongAnhDuy**.
+    Response chuẩn: `{ success: true, data, message? }`; lỗi: `{ success: false, error: { code, message, details? } }`.
+    Danh sách hỗ trợ `?page=&limit=&search=` và trả `{ items, page, limit, total }`.
+servers:
+  - url: /
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token (người dùng, có claim sub, username, role, iss, aud, jti, exp) hoặc token thiết bị "dev_…" (máy con)
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    childId:
+      name: childId
+      in: query
+      required: true
+      schema: { type: string }
+  schemas:
+    Point:
+      type: object
+      properties:
+        lat: { type: number }
+        lng: { type: number }
+        accuracy: { type: number }
+        speed: { type: number }
+        battery: { type: integer }
+        recordedAt: { type: string, format: date-time }
+security:
+  - bearer: []
+tags:
+  - name: Health
+  - name: Auth
+  - name: Tài khoản
+  - name: Admin
+  - name: Con
+  - name: Vị trí
+  - name: Vùng an toàn
+  - name: Buổi học
+  - name: Lịch khoá
+  - name: Cảnh báo
+  - name: Thiết bị (phụ huynh)
+  - name: Máy con
+  - name: Ticket
+paths:
+  /health:
+    get:
+      tags: [Health]
+      security: []
+      summary: Kiểm tra server sống (kèm tên project, sinh viên, database)
+      responses: { '200': { description: OK } }
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Đăng ký phụ huynh qua email (gửi OTP verify_email)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, username, email, password]
+              properties:
+                fullName: { type: string }
+                username: { type: string, example: duy_parent }
+                email: { type: string }
+                password: { type: string, example: Matkhau123 }
+                phone: { type: string }
+      responses: { '201': { description: '{ otpSessionId, maskedEmail, resendAfter }' }, '409': { description: Trùng email / username } }
+  /api/auth/verify-email:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Xác minh email bằng OTP → status = active
+      requestBody: { content: { application/json: { schema: { type: object, properties: { otpSessionId: { type: string }, code: { type: string } } } } } }
+      responses: { '200': { description: OK } }
+  /api/auth/resend-otp:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Gửi lại OTP ({ otpSessionId } hoặc { email, purpose = verify_email }), cách nhau ≥ 60 giây
+      responses: { '200': { description: OK }, '429': { description: Chưa đủ 60 giây } }
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Bước 1 — tên đăng nhập + mật khẩu → gửi OTP qua email
+      requestBody: { content: { application/json: { schema: { type: object, properties: { username: { type: string }, password: { type: string }, deviceId: { type: string }, deviceName: { type: string } } } } } }
+      responses: { '200': { description: '{ otpSessionId, maskedEmail }' }, '401': { description: Sai tên đăng nhập hoặc mật khẩu }, '403': { description: Chưa xác minh / bị khoá } }
+  /api/auth/login/verify-otp:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Bước 2 — nhập OTP → accessToken (15 phút) + refreshToken (30 ngày) + user
+      responses: { '200': { description: OK } }
+  /api/auth/face-login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Đăng nhập khuôn mặt — gửi { deviceId, refreshToken = faceToken } (khuôn mặt so khớp trên máy, không gửi lên server)
+      responses: { '200': { description: '{ accessToken, refreshToken, faceToken, user }' } }
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Đổi refresh token lấy cặp token mới (xoay vòng)
+      responses: { '200': { description: OK } }
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Thu hồi refresh token
+      responses: { '200': { description: OK } }
+  /api/auth/forgot-password:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Gửi OTP đặt lại mật khẩu
+      responses: { '200': { description: OK } }
+  /api/auth/reset-password:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Đặt mật khẩu mới bằng OTP ({ otpSessionId, code, newPassword })
+      responses: { '200': { description: OK } }
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Thông tin người đang đăng nhập
+      responses: { '200': { description: OK } }
+
+  /api/users/me:
+    patch:
+      tags: [Tài khoản]
+      summary: Sửa họ tên, số điện thoại
+      responses: { '200': { description: OK } }
+  /api/users/me/password:
+    patch:
+      tags: [Tài khoản]
+      summary: Đổi mật khẩu ({ currentPassword, newPassword })
+      responses: { '200': { description: OK } }
+  /api/users/me/face-login:
+    patch:
+      tags: [Tài khoản]
+      summary: Bật/tắt đăng nhập khuôn mặt cho máy này ({ enabled, deviceId, password }) — bật trả về faceToken
+      responses: { '200': { description: OK } }
+  /api/users/me/fcm-token:
+    patch:
+      tags: [Tài khoản]
+      summary: Lưu FCM token của máy phụ huynh
+      responses: { '200': { description: OK } }
+
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      summary: Thống kê (người dùng theo role, thiết bị online 15 phút, cảnh báo hôm nay, ticket đang mở)
+      responses: { '200': { description: OK } }
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: Danh sách người dùng (?search=&role=&status=&page=&limit=)
+      responses: { '200': { description: OK } }
+    post:
+      tags: [Admin]
+      summary: Tạo admin / staff / parent
+      responses: { '201': { description: OK } }
+  /api/admin/users/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get: { tags: [Admin], summary: 'Chi tiết người dùng', responses: { '200': { description: OK } } }
+    patch: { tags: [Admin], summary: 'Sửa thông tin / đổi role', responses: { '200': { description: OK } } }
+    delete: { tags: [Admin], summary: 'Xoá mềm (status = deleted), không xoá được chính mình', responses: { '200': { description: OK } } }
+  /api/admin/users/{id}/status:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch: { tags: [Admin], summary: 'Khoá / mở khoá ({ status = active | locked })', responses: { '200': { description: OK } } }
+
+  /api/children:
+    get: { tags: [Con], summary: 'Danh sách con (kèm thiết bị, pin, đang ở đâu, cảnh báo mới nhất)', responses: { '200': { description: OK } } }
+    post: { tags: [Con], summary: 'Thêm hồ sơ con ({ name, birthYear, schoolName, avatarColor })', responses: { '201': { description: OK } } }
+  /api/children/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get: { tags: [Con], summary: 'Chi tiết con', responses: { '200': { description: OK } } }
+    patch: { tags: [Con], summary: 'Sửa hồ sơ con', responses: { '200': { description: OK } } }
+    delete: { tags: [Con], summary: 'Xoá con + toàn bộ dữ liệu liên quan + huỷ ghép thiết bị', responses: { '200': { description: OK } } }
+  /api/children/{id}/pairing-code:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post: { tags: [Con], summary: 'Tạo mã ghép QR (hết hạn 10 phút, dùng 1 lần) — QR chứa {"t":"conan-pair","c":"<code>"}', responses: { '201': { description: OK } } }
+  /api/children/{id}/off-dates:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post: { tags: [Con], summary: 'Đánh dấu ngày nghỉ học ({ date: YYYY-MM-DD })', responses: { '200': { description: OK } } }
+    delete: { tags: [Con], summary: 'Bỏ ngày nghỉ học ({ date })', responses: { '200': { description: OK } } }
+  /api/children/{id}/locations/latest:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get: { tags: [Vị trí], summary: 'Vị trí mới nhất (fallback khi socket rớt)', responses: { '200': { description: OK } } }
+  /api/children/{id}/locations:
+    parameters:
+      - { $ref: '#/components/parameters/id' }
+      - { name: date, in: query, required: true, schema: { type: string, example: '2026-10-21' } }
+    get: { tags: [Vị trí], summary: 'Lịch sử vị trí theo ngày (giờ Việt Nam)', responses: { '200': { description: OK } } }
+
+  /api/geofences:
+    get: { tags: [Vùng an toàn], parameters: [{ $ref: '#/components/parameters/childId' }], summary: 'Danh sách vùng của con', responses: { '200': { description: OK } } }
+    post: { tags: [Vùng an toàn], summary: 'Tạo vùng ({ childId, name, type: home|school|other, center: {lat,lng}, radiusM 50–1000, notifyEnter, notifyExit })', responses: { '201': { description: OK } } }
+  /api/geofences/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch: { tags: [Vùng an toàn], summary: 'Sửa vùng', responses: { '200': { description: OK } } }
+    delete: { tags: [Vùng an toàn], summary: 'Xoá vùng (không xoá được vùng trường đang gắn thời khoá biểu)', responses: { '200': { description: OK }, '409': { description: Đang được dùng } } }
+
+  /api/school-sessions:
+    get: { tags: [Buổi học], parameters: [{ $ref: '#/components/parameters/childId' }], summary: 'Thời khoá biểu của con', responses: { '200': { description: OK } } }
+    post: { tags: [Buổi học], summary: 'Thêm buổi học ({ childId, geofenceId (loại school), daysOfWeek [1..7], startTime, endTime, label, graceMinutes, outsideToleranceMinutes })', responses: { '201': { description: OK }, '409': { description: Trùng giờ } } }
+  /api/school-sessions/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch: { tags: [Buổi học], summary: 'Sửa buổi học', responses: { '200': { description: OK } } }
+    delete: { tags: [Buổi học], summary: 'Xoá buổi học', responses: { '200': { description: OK } } }
+
+  /api/lock-schedules:
+    get: { tags: [Lịch khoá], parameters: [{ $ref: '#/components/parameters/childId' }], summary: 'Lịch khoá của con (kèm activeNow)', responses: { '200': { description: OK } } }
+    post: { tags: [Lịch khoá], summary: 'Tạo lịch khoá ({ childId, name, daysOfWeek, startTime, endTime (cho phép qua nửa đêm), allowedPackages, enabled })', responses: { '201': { description: OK } } }
+  /api/lock-schedules/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch: { tags: [Lịch khoá], summary: 'Sửa / bật tắt lịch khoá', responses: { '200': { description: OK } } }
+    delete: { tags: [Lịch khoá], summary: 'Xoá lịch khoá', responses: { '200': { description: OK } } }
+
+  /api/alerts:
+    get: { tags: [Cảnh báo], summary: 'Danh sách cảnh báo (?childId=&type=&unread=true) kèm unreadCount', responses: { '200': { description: OK } } }
+  /api/alerts/{id}/read:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch: { tags: [Cảnh báo], summary: 'Đánh dấu đã đọc', responses: { '200': { description: OK } } }
+  /api/alerts/read-all:
+    patch: { tags: [Cảnh báo], summary: 'Đánh dấu tất cả đã đọc', responses: { '200': { description: OK } } }
+  /api/alerts/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    delete: { tags: [Cảnh báo], summary: 'Xoá cảnh báo', responses: { '200': { description: OK } } }
+  /api/alerts/read:
+    delete: { tags: [Cảnh báo], summary: 'Xoá tất cả cảnh báo đã đọc', responses: { '200': { description: OK } } }
+
+  /api/devices:
+    get: { tags: [Thiết bị (phụ huynh)], summary: 'Danh sách thiết bị của các con (online, pin)', responses: { '200': { description: OK } } }
+  /api/devices/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch: { tags: [Thiết bị (phụ huynh)], summary: 'Đổi tên thiết bị', responses: { '200': { description: OK } } }
+    delete: { tags: [Thiết bị (phụ huynh)], summary: 'Huỷ ghép (thu hồi token máy con)', responses: { '200': { description: OK } } }
+  /api/devices/{id}/locate-now:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post: { tags: [Thiết bị (phụ huynh)], summary: 'Gửi FCM locate_now để máy con gửi vị trí ngay', responses: { '200': { description: OK }, '503': { description: Chưa cấu hình Firebase } } }
+  /api/devices/child/{id}/apps:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get: { tags: [Thiết bị (phụ huynh)], summary: 'Danh sách app trên máy con (để chọn app được phép khi khoá máy) — id là childId', responses: { '200': { description: OK } } }
+
+  /api/devices/pair:
+    post:
+      tags: [Máy con]
+      security: []
+      summary: Ghép máy bằng mã QR → nhận deviceToken (role child)
+      requestBody: { content: { application/json: { schema: { type: object, properties: { code: { type: string }, model: { type: string }, androidVersion: { type: string }, appVersion: { type: string } } } } } }
+      responses: { '201': { description: OK }, '400': { description: 'PAIR_CODE_INVALID | PAIR_CODE_USED | PAIR_CODE_EXPIRED' } }
+  /api/devices/me/locations:
+    post:
+      tags: [Máy con]
+      summary: Gửi vị trí (gộp tối đa 500 điểm, gửi bù khi có mạng lại)
+      requestBody: { content: { application/json: { schema: { type: object, properties: { points: { type: array, items: { $ref: '#/components/schemas/Point' } } } } } } }
+      responses: { '200': { description: OK } }
+  /api/devices/me/config:
+    get: { tags: [Máy con], summary: 'Cấu hình cho máy con (lịch khoá, thời khoá biểu hôm nay)', responses: { '200': { description: OK } } }
+  /api/devices/me/apps:
+    post: { tags: [Máy con], summary: 'Gửi danh sách app có icon ngoài launcher', responses: { '200': { description: OK } } }
+  /api/devices/me/sos:
+    post: { tags: [Máy con], summary: 'Gửi SOS kèm vị trí → cảnh báo đỏ cho phụ huynh', responses: { '200': { description: OK } } }
+  /api/devices/me/fcm-token:
+    patch: { tags: [Máy con], summary: 'Lưu FCM token của máy con', responses: { '200': { description: OK } } }
+  /api/devices/me/permission-status:
+    post: { tags: [Máy con], summary: 'Báo trạng thái quyền ({ permissions: { location: true, usageAccess: false, ... } }) — quyền bị tắt → cảnh báo', responses: { '200': { description: OK } } }
+
+  /api/tickets:
+    get: { tags: [Ticket], summary: 'Danh sách ticket (?status=&scope=queue|mine|done cho nhân viên)', responses: { '200': { description: OK } } }
+    post: { tags: [Ticket], summary: 'Phụ huynh tạo ticket ({ subject, category: account|device|bug|other, content })', responses: { '201': { description: OK } } }
+  /api/tickets/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get: { tags: [Ticket], summary: 'Chi tiết + tin nhắn', responses: { '200': { description: OK } } }
+    patch: { tags: [Ticket], summary: 'Nhân viên đổi trạng thái (open → in_progress → resolved → closed)', responses: { '200': { description: OK } } }
+    delete: { tags: [Ticket], summary: 'Phụ huynh xoá khi còn open; admin xoá bất kỳ', responses: { '200': { description: OK } } }
+  /api/tickets/{id}/messages:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post: { tags: [Ticket], summary: 'Gửi tin nhắn', responses: { '200': { description: OK } } }
+  /api/tickets/{id}/claim:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post: { tags: [Ticket], summary: 'Nhân viên nhận ticket trong hàng chờ', responses: { '200': { description: OK }, '409': { description: Đã có người nhận } } }

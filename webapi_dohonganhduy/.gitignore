@@ -1,0 +1,7 @@
+# Web API ConAn: không commit thư viện, secret, log
+node_modules/
+.env
+.env.*
+!.env.example
+logs/
+coverage/
