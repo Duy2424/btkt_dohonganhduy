@@ -1,4 +1,4 @@
-// Test luồng máy con: ghép QR (một lần dùng), gửi vị trí, cảnh báo vào/ra vùng, SOS, cấu hình, huỷ ghép → 401.
+// Test luồng máy con: ghép QR (một lần dùng), gửi vị trí, cảnh báo vào/ra vùng, SOS, cấu hình, huỷ ghép → 401, tự thoát bằng mật khẩu bố mẹ.
 import { api, bearer, clearDb, loginAs, setupDb, teardownDb } from './helpers.js';
 import { PairingCode } from '../src/models/PairingCode.js';
 
@@ -99,5 +99,19 @@ describe('Huỷ ghép', () => {
     const res = await api().get('/api/devices/me/config').set(device);
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('DEVICE_UNPAIRED');
+  });
+
+  test('máy con tự thoát: sai mật khẩu bố mẹ bị chặn, đúng thì huỷ ghép và báo phụ huynh', async () => {
+    const { auth, device } = await pairDevice();
+    const wrong = await api().post('/api/devices/me/leave').set(device).send({ password: 'SaiMatKhau1' });
+    expect(wrong.status).toBe(403);
+    expect(wrong.body.error.code).toBe('WRONG_PARENT_PASSWORD');
+    expect((await api().get('/api/devices/me/config').set(device)).status).toBe(200);
+
+    await api().post('/api/devices/me/leave').set(device).send({ password: 'Passw0rd!' }).expect(200);
+    const after = await api().get('/api/devices/me/config').set(device);
+    expect(after.body.error.code).toBe('DEVICE_UNPAIRED');
+    const alerts = (await api().get('/api/alerts').set(auth)).body.data.items;
+    expect(alerts[0]).toMatchObject({ type: 'device_left', level: 'warning' });
   });
 });

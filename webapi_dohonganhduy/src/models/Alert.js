@@ -13,6 +13,7 @@ export const ALERT_TYPES = [
   'sos',
   'low_battery',
   'permission_revoked',
+  'device_left',
 ];
 
 const pointSchema = new mongoose.Schema(

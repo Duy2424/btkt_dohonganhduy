@@ -20,6 +20,7 @@ import '../../../auth/state/session_controller.dart';
 import '../../data/child_device_api.dart';
 import '../../services/location_service.dart';
 import '../../services/permission_status.dart';
+import '../widgets/leave_child_mode_dialog.dart';
 import '../widgets/sos_button.dart';
 
 class ChildHomeScreen extends ConsumerStatefulWidget {
@@ -164,6 +165,11 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> with WidgetsB
             icon: Badge(isLabelVisible: missing > 0, label: Text('$missing'), child: const Icon(Icons.verified_user_outlined)),
             onPressed: () => context.push('/child/permissions'),
           ),
+          IconButton(
+            tooltip: 'Thoát chế độ con',
+            icon: const Icon(Icons.logout),
+            onPressed: () => showLeaveChildModeDialog(context),
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -189,7 +195,7 @@ class _ChildHomeScreenState extends ConsumerState<ChildHomeScreen> with WidgetsB
             ),
             const SectionHeader('Lịch hôm nay'),
             if (c.offToday) const Text('🏖️ Hôm nay con được nghỉ học'),
-            if (c.todaySessions.isEmpty && todayLocks.isEmpty) const Text('Hôm nay không có lịch nào 🎉'),
+            if (!c.offToday && c.todaySessions.isEmpty && todayLocks.isEmpty) const Text('Hôm nay không có lịch nào 🎉'),
             for (final s in c.todaySessions)
               ListTile(
                 leading: const Icon(Icons.school, color: AppColors.info, size: 32),

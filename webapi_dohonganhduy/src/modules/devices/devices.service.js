@@ -1,12 +1,15 @@
-// Nghiệp vụ thiết bị phía phụ huynh: danh sách, đổi tên, huỷ ghép, "Định vị ngay".
-// Ghép QR + các API của chính máy con nằm ở child-device.service.js.
+// Nghiệp vụ thiết bị phía phụ huynh: danh sách, đổi tên, huỷ ghép, "Định vị ngay",
+// và máy con tự thoát khi nhập đúng mật khẩu của bố mẹ. Ghép QR và các API khác của máy con nằm ở child-device.service.js.
+import bcrypt from 'bcryptjs';
 import { Device } from '../../models/Device.js';
 import { Child } from '../../models/Child.js';
+import { User } from '../../models/User.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { emitToParent } from '../../sockets/index.js';
 import { EVENTS } from '../../sockets/events.js';
 import { sendDataToDevice, isPushEnabled } from '../../services/push.service.js';
 import { toDeviceSummary } from '../children/children.service.js';
+import { createAlert } from '../alerts/alerts.service.js';
 
 export function toDeviceDto(device, child) {
   return {
@@ -48,6 +51,25 @@ export async function unpair(parentId, id) {
   await device.save();
   await Child.updateOne({ _id: device.childId, deviceId: device._id }, { $set: { deviceId: null } });
   emitToParent(parentId, EVENTS.DEVICE_STATUS, { deviceId: id, childId: device.childId.toString(), status: 'unpaired' });
+}
+
+/** Con không tự thoát được: máy con phải gửi đúng mật khẩu tài khoản của bố mẹ, xong thì bố mẹ nhận cảnh báo. */
+export async function leaveByChild(auth, password) {
+  const parent = await User.findById(auth.parentId).select('passwordHash');
+  if (!parent || !(await bcrypt.compare(password, parent.passwordHash))) {
+    throw ApiError.forbidden('WRONG_PARENT_PASSWORD', 'Mật khẩu của bố mẹ không đúng');
+  }
+  await unpair(auth.parentId, auth.deviceId);
+  const child = await Child.findById(auth.childId).select('name');
+  await createAlert({
+    parentId: auth.parentId,
+    childId: auth.childId,
+    type: 'device_left',
+    level: 'warning',
+    title: 'Máy của con đã thoát ConAn',
+    message: `Máy của ${child?.name ?? 'con'} đã thoát chế độ con sau khi nhập đúng mật khẩu của bạn.`,
+  });
+  return { left: true };
 }
 
 export async function locateNow(parentId, id) {

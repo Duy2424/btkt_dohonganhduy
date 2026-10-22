@@ -4,7 +4,7 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { validate } from '../../middlewares/validate.js';
 import { authenticate } from '../../middlewares/authenticate.js';
 import { requireRole } from '../../middlewares/requireRole.js';
-import { authLimiter } from '../../middlewares/rateLimit.js';
+import { authLimiter, passwordLimiter } from '../../middlewares/rateLimit.js';
 import * as c from './devices.controller.js';
 import * as s from './devices.schema.js';
 
@@ -20,6 +20,8 @@ router.post('/me/apps', ...child, validate({ body: s.appsSchema }), asyncHandler
 router.post('/me/sos', ...child, validate({ body: s.sosSchema }), asyncHandler(c.sos));
 router.patch('/me/fcm-token', ...child, validate({ body: s.fcmTokenSchema }), asyncHandler(c.setFcmToken));
 router.post('/me/permission-status', ...child, validate({ body: s.permissionSchema }), asyncHandler(c.reportPermissions));
+// Giới hạn số lần thử để con không dò được mật khẩu của bố mẹ
+router.post('/me/leave', passwordLimiter, ...child, validate({ body: s.leaveSchema }), asyncHandler(c.leave));
 
 // Phụ huynh
 router.get('/', ...parent, asyncHandler(c.list));

@@ -282,6 +282,8 @@ paths:
     patch: { tags: [Máy con], summary: 'Lưu FCM token của máy con', responses: { '200': { description: OK } } }
   /api/devices/me/permission-status:
     post: { tags: [Máy con], summary: 'Báo trạng thái quyền ({ permissions: { location: true, usageAccess: false, ... } }) — quyền bị tắt → cảnh báo', responses: { '200': { description: OK } } }
+  /api/devices/me/leave:
+    post: { tags: [Máy con], summary: 'Máy con thoát chế độ con ({ password } là mật khẩu của bố mẹ). Đúng thì huỷ ghép và gửi cảnh báo device_left cho phụ huynh, sai trả 403 WRONG_PARENT_PASSWORD', responses: { '200': { description: OK }, '403': { description: Sai mật khẩu } } }
 
   /api/tickets:
     get: { tags: [Ticket], summary: 'Danh sách ticket (?status=&scope=queue|mine|done cho nhân viên)', responses: { '200': { description: OK } } }

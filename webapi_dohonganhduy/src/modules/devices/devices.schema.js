@@ -40,6 +40,10 @@ export const permissionSchema = z.object({
   permissions: z.record(z.string(), z.boolean()),
 });
 
+export const leaveSchema = z.object({
+  password: z.string({ error: 'Vui lòng nhập mật khẩu của bố mẹ' }).min(1, 'Vui lòng nhập mật khẩu của bố mẹ'),
+});
+
 export const renameSchema = z.object({
   name: z.string({ error: 'Vui lòng nhập tên thiết bị' }).trim().min(1, 'Vui lòng nhập tên thiết bị').max(40, 'Tên tối đa 40 ký tự'),
 });

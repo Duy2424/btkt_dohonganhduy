@@ -30,6 +30,10 @@ export async function pair(req, res) {
   ok(res, await childDevice.pair(req.valid.body), 'Ghép máy thành công', 201);
 }
 
+export async function leave(req, res) {
+  ok(res, await service.leaveByChild(req.auth, req.valid.body.password), 'Đã thoát chế độ con');
+}
+
 export async function ingestLocations(req, res) {
   ok(res, await childDevice.ingestLocations(req.auth, req.valid.body.points));
 }

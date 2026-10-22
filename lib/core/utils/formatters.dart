@@ -49,6 +49,7 @@ class Labels {
         'sos' => 'SOS',
         'low_battery' => 'Pin yếu',
         'permission_revoked' => 'Quyền bị tắt',
+        'device_left' => 'Thoát chế độ con',
         _ => t,
       };
 
@@ -62,5 +63,6 @@ class Labels {
     'sos',
     'low_battery',
     'permission_revoked',
+    'device_left',
   ];
 }

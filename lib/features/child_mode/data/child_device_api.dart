@@ -47,6 +47,9 @@ class ChildDeviceApi {
   Future<void> sos({double? lat, double? lng, double? accuracy}) =>
       _api.post('/api/devices/me/sos', data: {'lat': lat, 'lng': lng, 'accuracy': accuracy}, retry: true);
 
+  /// Thoát chế độ con: server kiểm mật khẩu của bố mẹ, đúng thì huỷ ghép.
+  Future<void> leave(String parentPassword) => _api.post('/api/devices/me/leave', data: {'password': parentPassword});
+
   Future<void> setFcmToken(String token) => _api.patch('/api/devices/me/fcm-token', data: {'token': token});
 
   Future<void> reportPermissions(Map<String, bool> permissions) =>

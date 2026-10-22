@@ -19,6 +19,8 @@ class LocationService {
 
   static Future<void> configure() async {
     try {
+      // Mở lại app khi dịch vụ nền còn chạy, lệnh configure có lúc không trả về. Không chờ quá 3 giây,
+      // nếu không main() đứng trước runApp và màn hình chỉ đen.
       await _service.configure(
         androidConfiguration: AndroidConfiguration(
           onStart: onLocationServiceStart,
@@ -32,7 +34,7 @@ class LocationService {
           foregroundServiceTypes: [AndroidForegroundType.location],
         ),
         iosConfiguration: IosConfiguration(autoStart: false),
-      );
+      ).timeout(const Duration(seconds: 3));
     } catch (e) {
       debugPrint('Không cấu hình được dịch vụ nền: $e');
     }

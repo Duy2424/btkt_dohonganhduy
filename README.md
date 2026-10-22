@@ -1,7 +1,7 @@
 # ConAn: app quản lý điện thoại trẻ em
 
 Đồ án Lập trình di động, project `btkt_dohonganhduy`, sinh viên Đỗ Hồng Anh Duy.
-Web API nằm ở `webapi_dohonganhduy/`, database `ConAnDB_DoHongAnhDuy`.
+Web API nằm ở `webapi_dohonganhduy/` (có bản tách riêng ở https://github.com/Duy2424/webapi_dohonganhduy), database `ConAnDB_DoHongAnhDuy`.
 Đặc tả: [docs/SPEC.md](docs/SPEC.md). Tiến độ: [docs/PROGRESS.md](docs/PROGRESS.md). Kịch bản thuyết trình: [docs/demo-script.md](docs/demo-script.md).
 
 ## Chạy app (thành viên nhóm)
@@ -96,7 +96,7 @@ npm run dev:memory
 npm run dev
 ```
 
-- `npm test`: 43 test (auth, JWT, CRUD, ghép QR, engine Giờ học an toàn), chạy trên MongoDB in-memory.
+- `npm test`: 44 test (auth, JWT, CRUD, ghép QR, máy con, engine Giờ học an toàn), chạy trên MongoDB in-memory.
 - `npm run dev:memory`: cổng 4000, database in-memory, có sẵn `admin01`, `staff01`, `parent01` (mật khẩu `Matkhau123`), OTP in ra terminal.
 - `npm run dev`: đọc `.env.development`, cổng 4000, database `ConAnDB_DoHongAnhDuy_dev`.
 
